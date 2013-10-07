@@ -48,3 +48,4 @@ Command line usage:
               -l, --line-numbers    use line numbers
               -i [File [File ...]]  file names to be converted
 
+Make sure to check out build_pdf.sh as an example of usage
