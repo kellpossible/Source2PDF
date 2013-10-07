@@ -15,9 +15,11 @@ Installation
 
 Uses python 2.7x
 Required packages python libaries which can be installed
-using easy_install:
+using [easy_install](https://pypi.python.org/pypi/setuptools) (as part of the setuptools collection):
 
         pisa, reportlab, html5lib and pygments
+
+I have not tested this on windows yet, but it should work, so long as you can install these libraries.
 
 For information about the license, check [Source2PDF.py](https://github.com/kellpossible/Source2PDF/blob/master/Source2Pdf.py)
 
