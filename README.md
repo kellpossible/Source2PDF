@@ -8,6 +8,8 @@ Source2PDF is currently capable of generating a single pdf document of an entire
 scanning the project directory for relevant source files. It is also possible to instruct Source2PDF
 to exclude certain documents or folders using regular expressions.
 
+Here is an example of the output you can expect: [Source2PDF.pdf](https://github.com/kellpossible/Source2PDF/blob/master/Source2Pdf.pdf?raw=true)
+
 Installation
 --------------
 
