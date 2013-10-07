@@ -8,6 +8,7 @@ Source2PDF is currently capable of generating a single pdf document of an entire
 scanning the project directory for relevant source files. It is also possible to instruct Source2PDF
 to exclude certain documents or folders using regular expressions.
 
+Installation
 --------------
 
 Uses python 2.7x
