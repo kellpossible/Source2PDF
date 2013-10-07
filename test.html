@@ -1,0 +1,607 @@
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303</pre></div></td><td class="code"><div class="highlight"><pre><span class="c">#!/usr/bin/env python2</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Source2Pdf.py</span>
+<span class="sd">This file is part of Source2PDF</span>
+
+<span class="sd">Copyright (C) 2013 - Luke Frisken</span>
+
+<span class="sd">Source2PDF is free software; you can redistribute it and/or modify</span>
+<span class="sd">it under the terms of the GNU General Public License as published by</span>
+<span class="sd">the Free Software Foundation; either version 2 of the License, or</span>
+<span class="sd">(at your option) any later version.</span>
+
+<span class="sd">Source2PDF is distributed in the hope that it will be useful,</span>
+<span class="sd">but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="sd">MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="sd">GNU General Public License for more details.</span>
+
+<span class="sd">You should have received a copy of the GNU General Public License</span>
+<span class="sd">along with Source2PDF. If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">cStringIO</span> <span class="kn">as</span> <span class="nn">StringIO</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">os.path</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">datetime</span><span class="o">,</span> <span class="nn">pwd</span><span class="o">,</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">Popen</span><span class="p">,</span> <span class="n">PIPE</span><span class="p">,</span> <span class="n">STDOUT</span>
+<span class="kn">import</span> <span class="nn">ho.pisa</span> <span class="kn">as</span> <span class="nn">pisa</span>
+
+<span class="kn">from</span> <span class="nn">pygments</span> <span class="kn">import</span> <span class="n">highlight</span>
+<span class="kn">from</span> <span class="nn">pygments.lexers</span> <span class="kn">import</span> <span class="n">PythonLexer</span>
+<span class="kn">from</span> <span class="nn">pygments.formatters</span> <span class="kn">import</span> <span class="n">HtmlFormatter</span>
+
+<span class="k">def</span> <span class="nf">get_current_directory</span><span class="p">():</span>
+	<span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">get_source_directory</span><span class="p">():</span>
+	<span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+	<span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span>
+
+<span class="k">class</span> <span class="nc">ProjectDocument</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;This Class Represents the document of the overall project&quot;&quot;&quot;</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">file_documents</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">get_project_stats</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">main_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&quot;.*main[.].*&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+		
+	<span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">document</span><span class="p">):</span>
+		<span class="c">#TODO: make main_re part of the options</span>
+		<span class="c">#insert any document with path containing main at the start</span>
+		<span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">main_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">document</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">file_documents</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">document</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c">#append any others to the end ;)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">file_documents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">document</span><span class="p">)</span>
+	
+	<span class="k">def</span> <span class="nf">get_project_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">cloc</span> <span class="o">=</span> <span class="mi">0</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+	
+	<span class="k">def</span> <span class="nf">to_html</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Convert document to html&quot;&quot;&quot;</span>
+		<span class="n">html</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">&lt;html&gt;</span>
+<span class="s">&lt;style&gt;</span>
+<span class="s">@page {</span>
+<span class="s">  margin: 1cm;</span>
+<span class="s">  margin-bottom: 2.5cm;</span>
+<span class="s">  @frame footer {</span>
+<span class="s">    -pdf-frame-content: footerContent;</span>
+<span class="s">    bottom: 1cm;</span>
+<span class="s">    margin-left: 1cm;</span>
+<span class="s">    margin-right: 1cm;</span>
+<span class="s">    height: 1cm;</span>
+<span class="s">  }</span>
+<span class="s">  @frame footer {</span>
+<span class="s">    -pdf-frame-content: headerContent;</span>
+<span class="s">    top: 0.5cm;</span>
+<span class="s">    margin-left: 17.5cm;</span>
+<span class="s">    margin-right: 1cm;</span>
+<span class="s">    height: 1cm;</span>
+<span class="s">  }</span>
+<span class="s">}</span>
+<span class="s">font {</span>
+<span class="s">	font-size: 140%;</span>
+<span class="s">}</span>
+<span class="s">&lt;/style&gt;</span>
+<span class="s">&lt;div id=&quot;footerContent&quot;&gt;</span>
+<span class="s">   page &lt;pdf:pagenumber /&gt;</span>
+<span class="s">&lt;/div&gt;</span>
+<span class="s">&quot;&quot;&quot;</span>
+		<span class="n">html</span> <span class="o">+=</span> <span class="s">&quot;&quot;&quot;&lt;div id=&quot;headerContent&quot;&gt;</span>
+<span class="s">   &lt;b&gt;Project: {0}&lt;/b&gt;</span>
+<span class="s">&lt;/div&gt;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+		<span class="n">html</span> <span class="o">+=</span> <span class="s">&quot;&quot;&quot;&lt;h1 style=&quot;font-size:300%&quot;&gt;Project: {0}&lt;/h1&gt;</span>
+<span class="s">		&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_documents</span><span class="p">:</span>
+			<span class="n">html</span> <span class="o">+=</span> <span class="n">d</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span>
+		
+		<span class="n">html</span> <span class="o">+=</span> <span class="s">&quot;&lt;/style&gt;&quot;</span>
+		<span class="k">return</span> <span class="n">html</span>
+		
+	<span class="k">def</span> <span class="nf">to_pdf_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Convert document to pdf file&quot;&quot;&quot;</span>
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+		<span class="k">print</span><span class="p">(</span><span class="s">&quot;starting&quot;</span><span class="p">)</span>
+		<span class="n">html</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span>
+		<span class="c">#f.write(html)</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">encoded_html</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&quot;ISO-8859-1&quot;</span><span class="p">)</span>
+		<span class="k">except</span><span class="p">:</span>
+			<span class="n">changed_html</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_encoding</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+			<span class="n">encoded_html</span> <span class="o">=</span> <span class="n">html</span>
+		<span class="n">pdf</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">CreatePDF</span><span class="p">(</span><span class="n">StringIO</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">encoded_html</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+		<span class="k">print</span><span class="p">(</span><span class="n">pdf</span><span class="o">.</span><span class="n">err</span><span class="p">)</span>
+		<span class="c">#if not pdf.err:</span>
+			<span class="c">#pisa.startViewer(filepath)</span>
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+	
+	<span class="k">def</span> <span class="nf">validate_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+		<span class="c">#re.sub(&#39;[\xe2]&#39;, &#39;&#39;, text)</span>
+		<span class="n">text</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\xe2</span><span class="s">&#39;</span><span class="p">)</span>
+			
+	
+	<span class="k">def</span> <span class="nf">to_html_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+		<span class="n">html</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_html</span><span class="p">()</span>
+		<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+		
+
+<span class="k">class</span> <span class="nc">FileDocument</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;This class represents a document of a single file in</span>
+<span class="sd">	the project&quot;&quot;&quot;</span>
+	<span class="n">userinfo</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="c">#path to file associated with document</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">get_user_info</span><span class="p">()</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">get_file_stats</span><span class="p">()</span>
+	
+	<span class="k">def</span> <span class="nf">get_user_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Get user info about this file from the filesystem&quot;&quot;&quot;</span>
+		<span class="k">for</span> <span class="n">ui</span> <span class="ow">in</span> <span class="n">pwd</span><span class="o">.</span><span class="n">getpwall</span><span class="p">():</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">userinfo</span><span class="p">[</span><span class="n">ui</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">ui</span>
+			
+	<span class="k">def</span> <span class="nf">get_file_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;get file stats about this file from the filesystem&quot;&quot;&quot;</span>
+		<span class="n">stats</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+		<span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">userinfo</span><span class="p">[</span><span class="n">stats</span><span class="o">.</span><span class="n">st_uid</span><span class="p">]</span>
+		<span class="c">#self.username = user.pw_name</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">pw_gecos</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">modifytime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">st_mtime</span><span class="p">)</span>
+		
+	<span class="k">def</span> <span class="nf">to_html</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Convert file document to html&quot;&quot;&quot;</span>
+		<span class="n">source_dir</span> <span class="o">=</span> <span class="n">get_source_directory</span><span class="p">()</span>
+		<span class="n">css_path</span> <span class="o">=</span> <span class="n">source_dir</span> <span class="o">+</span> <span class="s">&quot;printing.css&quot;</span>
+
+		<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+
+		<span class="c">#cmd = &quot;source-highlight -n --style-css-file {0} --tab 2 -f html -i {1}&quot;.format(css_path, self.path)</span>
+		<span class="c">#p = Popen(cmd.split(), shell=False, stdout=PIPE)</span>
+
+		<span class="n">file_path_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">get_current_directory</span><span class="p">())</span>		
+		<span class="n">html_string</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;&lt;h1&gt;File: {0}&lt;/h1&gt;</span>
+<span class="s">		&lt;h3&gt;Created By: {1}, Date: {2}&lt;/h3&gt;</span>
+<span class="s">		&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_path_name</span><span class="p">,</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+					<span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modifytime</span><span class="p">))</span>
+
+		<span class="n">html_string</span> <span class="o">+=</span> <span class="n">highlight</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">PythonLexer</span><span class="p">(),</span> <span class="n">HtmlFormatter</span><span class="p">())</span>
+		
+		<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+		<span class="k">return</span> <span class="n">html_string</span>
+		
+	<span class="k">def</span> <span class="nf">to_latex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;return string of latex&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+		
+<span class="k">class</span> <span class="nc">Searcher</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;This class is used for searching the filsystem for</span>
+<span class="sd">	the relevent files to include in the project&quot;&quot;&quot;</span>
+	<span class="n">code_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;h&#39;</span><span class="p">,</span>
+						<span class="s">&#39;cpp&#39;</span><span class="p">,</span> <span class="s">&#39;hpp&#39;</span><span class="p">,</span>
+						<span class="s">&#39;cs&#39;</span><span class="p">,</span>
+						<span class="s">&#39;go&#39;</span><span class="p">,</span>
+						<span class="s">&#39;java&#39;</span><span class="p">,</span>
+						<span class="s">&#39;py&#39;</span><span class="p">]</span>
+
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">extensions</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">extensions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">code_extensions</span> <span class="c">#auto extensions</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">extensions</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">extensions</span>
+		
+		<span class="bp">self</span><span class="o">.</span><span class="n">build_re_extensions</span><span class="p">()</span>
+		
+		<span class="bp">self</span><span class="o">.</span><span class="n">re_exclusions</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">exclusions</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">exclusions</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">exclusions</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">build_re_exclusions</span><span class="p">()</span>
+		
+		<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">SEARCH_ARGS</span> <span class="o">=</span> <span class="bp">False</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">SEARCH_ARGS</span> <span class="o">=</span> <span class="bp">True</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">arg_filenames</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span>
+		
+		<span class="bp">self</span><span class="o">.</span><span class="n">documents</span> <span class="o">=</span> <span class="p">[]</span>
+		
+		
+	<span class="k">def</span> <span class="nf">build_re_extensions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Build regular expression for searching</span>
+<span class="sd">		file extensions&quot;&quot;&quot;</span>
+		<span class="n">extensions_list</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+		<span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extensions</span><span class="p">:</span>
+			<span class="n">extensions_list</span> <span class="o">+=</span> <span class="s">&quot;{0}|&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ext</span><span class="p">)</span>
+			
+		<span class="n">extensions_list</span> <span class="o">=</span> <span class="n">extensions_list</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c">#cut final bar</span>
+		<span class="n">re_string</span> <span class="o">=</span> <span class="s">&quot;.*[.]({0})$&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">extensions_list</span><span class="p">)</span>
+		<span class="k">print</span><span class="p">(</span><span class="n">re_string</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">extension_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">re_string</span><span class="p">)</span>
+		
+	<span class="k">def</span> <span class="nf">build_re_exclusions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Build regular expression for excluding files&quot;&quot;&quot;</span>
+		<span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclusions</span><span class="p">:</span>
+			<span class="n">re_ex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">re_exclusions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">re_ex</span><span class="p">)</span>
+	
+	<span class="k">def</span> <span class="nf">test_exclude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+		<span class="k">for</span> <span class="n">re_ex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">re_exclusions</span><span class="p">:</span>
+			<span class="k">if</span> <span class="n">re_ex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+				<span class="k">return</span> <span class="bp">True</span>
+		
+		<span class="k">return</span> <span class="bp">False</span>
+	
+	<span class="k">def</span> <span class="nf">search</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">documents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ProjectDocument</span><span class="p">(</span><span class="n">get_current_directory</span><span class="p">()))</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">SEARCH_ARGS</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">searchAuto</span><span class="p">()</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">searchArgs</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">searchAuto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">current_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+		<span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">current_dir</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+				<span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+				<span class="c">#print(root + &quot;/&quot; + f)</span>
+				<span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extension_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+				<span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+					<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_exclude</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
+						<span class="k">print</span><span class="p">(</span><span class="s">&quot;excluded: {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fpath</span><span class="p">))</span>
+						<span class="k">continue</span>
+					<span class="bp">self</span><span class="o">.</span><span class="n">documents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FileDocument</span><span class="p">(</span><span class="n">fpath</span><span class="p">))</span>
+	
+	<span class="k">def</span> <span class="nf">searchArgs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_filenames</span><span class="p">:</span>
+			<span class="n">root</span> <span class="o">=</span> <span class="n">get_current_directory</span><span class="p">()</span>
+			<span class="c">#print(root, fname)</span>
+			<span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+			<span class="c">#print(path)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">documents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FileDocument</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+		
+	<span class="k">def</span> <span class="nf">handle_file_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+		<span class="k">pass</span>
+        	
+	
+<span class="c">#extensions = extension_s.split(&quot;;&quot;)</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+	<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s">&#39;Convert code to PDF files&#39;</span><span class="p">)</span>
+	<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--ext&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">&#39;Ext&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;extensions&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;*&#39;</span><span class="p">,</span>
+		<span class="n">help</span><span class="o">=</span><span class="s">&#39;the letters of the file extensions&#39;</span><span class="p">)</span>
+	<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--exclude&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">&#39;Regex&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;exclusions&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;*&#39;</span><span class="p">,</span>
+		<span class="n">help</span><span class="o">=</span><span class="s">&#39;each element of exclude is a regex to be excluded&#39;</span><span class="p">)</span>
+	<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-o&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">&#39;File&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;outfile&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;?&#39;</span><span class="p">,</span>
+		<span class="n">help</span><span class="o">=</span><span class="s">&#39;name of output file&#39;</span><span class="p">)</span>
+	<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--user-name&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;username&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;?&#39;</span><span class="p">,</span>
+		<span class="n">help</span><span class="o">=</span><span class="s">&#39;set custom user name&#39;</span><span class="p">)</span>
+	<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--project-name&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;project_name&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;?&#39;</span><span class="p">,</span>
+		<span class="n">help</span><span class="o">=</span><span class="s">&#39;set custom project name&#39;</span><span class="p">)</span>
+	<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-i&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s">&#39;File&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;files&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;*&#39;</span><span class="p">,</span>
+		<span class="n">help</span><span class="o">=</span><span class="s">&#39;file names to be converted&#39;</span><span class="p">)</span>
+
+	<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+	<span class="n">outfile</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">outfile</span>
+	<span class="n">s</span> <span class="o">=</span> <span class="n">Searcher</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+	<span class="n">s</span><span class="o">.</span><span class="n">search</span><span class="p">()</span>
+	<span class="n">doc</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">documents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	
+	<span class="k">if</span> <span class="ow">not</span> <span class="n">outfile</span><span class="p">:</span>
+		<span class="n">outfile</span> <span class="o">=</span> <span class="s">&quot;render.pdf&quot;</span>
+	
+	
+	<span class="k">if</span> <span class="n">outfile</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;pdf&quot;</span><span class="p">:</span>
+		<span class="c">#doc.to_html_file(&quot;render.html&quot;)</span>
+		<span class="n">doc</span><span class="o">.</span><span class="n">to_pdf_file</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">doc</span><span class="o">.</span><span class="n">to_html_file</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+</pre></div>
+</td></tr></table>

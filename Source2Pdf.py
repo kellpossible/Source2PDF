@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """
 Source2Pdf.py
@@ -27,7 +27,11 @@ import argparse
 from subprocess import Popen, PIPE, STDOUT
 import ho.pisa as pisa
 
-#import pygments
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import HtmlFormatter
+from pygments.lexers import guess_lexer_for_filename
+from pygments.styles import STYLE_MAP
 
 def get_current_directory():
 	return os.getcwd()
@@ -38,7 +42,8 @@ def get_source_directory():
 
 class ProjectDocument(object):
 	"""This Class Represents the document of the overall project"""
-	def __init__(self, path):
+	def __init__(self, path, args):
+		self.args = args
 		self.file_documents = []
 		self.path = path
 		self.get_project_stats()
@@ -60,8 +65,8 @@ class ProjectDocument(object):
 	
 	def to_html(self):
 		"""Convert document to html"""
-		html = """
-<html>
+		html = "<html>"
+		html += """
 <style>
 @page {
   margin: 1cm;
@@ -83,13 +88,21 @@ class ProjectDocument(object):
 }
 font {
 	font-size: 140%;
-}
-</style>
+}"""
+		#add pygments styles to stylesheet
+		style = "bw"
+		if self.args.style:
+			style = self.args.style
+		html += HtmlFormatter(style=style).get_style_defs('.highlight')
+
+
+		html +="\n</style>"
+		html +="""
 <div id="footerContent">
    page <pdf:pagenumber />
 </div>
 """
-		html += """<div id="headerContent">
+		html += """<div id="headerContent" style="margin-left: -2cm">
    <b>Project: {0}</b>
 </div>""".format(self.name)
 		html += """<h1 style="font-size:300%">Project: {0}</h1>
@@ -133,7 +146,8 @@ class FileDocument(object):
 	"""This class represents a document of a single file in
 	the project"""
 	userinfo = {}
-	def __init__(self, path):
+	def __init__(self, path, args):
+		self.args = args
 		self.path = path #path to file associated with document
 		self.get_user_info()
 		self.get_file_stats()
@@ -146,17 +160,25 @@ class FileDocument(object):
 	def get_file_stats(self):
 		"""get file stats about this file from the filesystem"""
 		stats = os.stat(self.path)
-		user = self.userinfo[stats.st_uid]
-		#self.username = user.pw_name
-		self.username = user.pw_gecos[:-3]
+		if self.args.username:
+			self.username = self.args.username
+		else:
+			user = self.userinfo[stats.st_uid]
+			self.username = user.pw_gecos #use real username
+			#self.username = user.pw_name #use the short username
+
 		self.modifytime = datetime.date.fromtimestamp(stats.st_mtime)
 		
 	def to_html(self):
 		"""Convert file document to html"""
 		source_dir = get_source_directory()
 		css_path = source_dir + "printing.css"
-		cmd = "source-highlight -n --style-css-file {0} --tab 2 -f html -i {1}".format(css_path, self.path)
-		p = Popen(cmd.split(), shell=False, stdout=PIPE)
+
+		fin = open(self.path, 'r')
+		code = fin.read()
+
+		#cmd = "source-highlight -n --style-css-file {0} --tab 2 -f html -i {1}".format(css_path, self.path)
+		#p = Popen(cmd.split(), shell=False, stdout=PIPE)
 
 		file_path_name = os.path.relpath(self.path, get_current_directory())		
 		html_string = """<h1>File: {0}</h1>
@@ -164,9 +186,17 @@ class FileDocument(object):
 		""".format(file_path_name,
 					self.username,
 					str(self.modifytime))
-		for line in p.stdout:
-			html_string += line
+
+		lexer = guess_lexer_for_filename('test.py', code, stripall=True)
 		
+		linenos = False
+		if self.args.linenumbers == True:
+			linenos = 'inline'
+
+		formatter = HtmlFormatter(style='bw', linenos=linenos)
+		html_string += highlight(code, lexer, formatter)
+		
+		fin.close()
 		return html_string
 		
 	def to_latex(self):
@@ -184,6 +214,7 @@ class Searcher(object):
 						'py']
 
 	def __init__(self, args):
+		self.args = args
 		if args.extensions == None:
 			self.extensions = self.code_extensions #auto extensions
 		else:
@@ -231,7 +262,7 @@ class Searcher(object):
 		return False
 	
 	def search(self):
-		self.documents.append(ProjectDocument(get_current_directory()))
+		self.documents.append(ProjectDocument(get_current_directory(), self.args))
 		if not self.SEARCH_ARGS:
 			self.searchAuto()
 		else:
@@ -248,7 +279,7 @@ class Searcher(object):
 					if self.test_exclude(fpath):
 						print("excluded: {0}".format(fpath))
 						continue
-					self.documents[0].append(FileDocument(fpath))
+					self.documents[0].append(FileDocument(fpath, self.args))
 	
 	def searchArgs(self):
 		for fname in self.arg_filenames:
@@ -256,7 +287,7 @@ class Searcher(object):
 			#print(root, fname)
 			path = os.path.join(root, fname)
 			#print(path)
-			self.documents[0].append(FileDocument(path))
+			self.documents[0].append(FileDocument(path, self.args))
 		
 	def handle_file_search(self, root, f):
 		pass
@@ -267,16 +298,21 @@ class Searcher(object):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Convert code to PDF files')
-	parser.add_argument('--ext', metavar='Ext', type=str, dest='extensions', nargs='*',
+	parser.add_argument('-e','--ext', metavar='Ext', type=str, dest='extensions', nargs='*',
 		help='the letters of the file extensions')
-	parser.add_argument('--exclude', metavar='Regex', type=str, dest='exclusions', nargs='*',
+	parser.add_argument('-x','--exclude', metavar='Regex', type=str, dest='exclusions', nargs='*',
 		help='each element of exclude is a regex to be excluded')
 	parser.add_argument('-o', metavar='File', type=str, dest='outfile', nargs='?',
 		help='name of output file')
-	parser.add_argument('--user-name', type=str, dest='username', nargs='?',
+	parser.add_argument('-u', '--user-name', type=str, dest='username', nargs='?',
 		help='set custom user name')
-	parser.add_argument('--project-name', type=str, dest='project_name', nargs='?',
+	parser.add_argument('-n', '--project-name', type=str, dest='project_name', nargs='?',
 		help='set custom project name')
+	parser.add_argument('--style', type=str, dest='style', nargs='?',
+		choices=STYLE_MAP.keys(),
+		help='set pygments style')
+	parser.add_argument('-l', '--line-numbers', dest='linenumbers', action='store_true',
+		help='use line numbers')
 	parser.add_argument('-i', metavar='File', type=str, dest='files', nargs='*',
 		help='file names to be converted')
 
