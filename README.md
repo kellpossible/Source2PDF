@@ -20,3 +20,31 @@ using easy_install:
         pisa, reportlab, html5lib and pygments
 
 For information about the license, check Source2PDF.py
+
+Usage
+--------------
+Command line usage:
+
+        usage: Source2Pdf.py [-h] [-e [Ext [Ext ...]]] [-x [Regex [Regex ...]]]
+            [-o [File]] [-u [USERNAME]] [-n [PROJECT_NAME]]
+            [--style [{monokai,manni,rrt,perldoc,borland,colorful,default,murphy,vs,trac,tango,fruity,autumn,bw,emacs,vim,pastie,friendly,native}]]
+            [-l] [-i [File [File ...]]]
+
+            Convert code to PDF files
+
+            optional arguments:
+              -h, --help            show this help message and exit
+              -e [Ext [Ext ...]], --ext [Ext [Ext ...]]
+                                    the letters of the file extensions
+              -x [Regex [Regex ...]], --exclude [Regex [Regex ...]]
+                                    each element of exclude is a regex to be excluded
+              -o [File]             name of output file
+              -u [USERNAME], --user-name [USERNAME]
+                                    set custom user name
+              -n [PROJECT_NAME], --project-name [PROJECT_NAME]
+                                    set custom project name
+              --style [{monokai,manni,rrt,perldoc,borland,colorful,default,murphy,vs,trac,tango,fruity,autumn,bw,emacs,vim,pastie,friendly,native}]
+                                    set pygments style
+              -l, --line-numbers    use line numbers
+              -i [File [File ...]]  file names to be converted
+
