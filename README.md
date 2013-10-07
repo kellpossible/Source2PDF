@@ -57,3 +57,12 @@ Command line usage:
               -i [File [File ...]]  file names to be converted
 
 Make sure to check out [build_pdf.sh](https://github.com/kellpossible/Source2PDF/blob/master/build_pdf.sh) as an example of usage
+
+Future Work
+------------
+
+I'm considering implementing the following functionality:
+* binary exe package and installer for windows
+* gui using python-pyside or wxpython
+* index page, possibly with links to other sections in the pdf
+* web application using [web2py](http://web2py.com/)
