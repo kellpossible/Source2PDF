@@ -27,6 +27,8 @@ import argparse
 from subprocess import Popen, PIPE, STDOUT
 import ho.pisa as pisa
 
+#import pygments
+
 def get_current_directory():
 	return os.getcwd()
 
