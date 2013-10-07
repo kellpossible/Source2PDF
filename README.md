@@ -48,4 +48,4 @@ Command line usage:
               -l, --line-numbers    use line numbers
               -i [File [File ...]]  file names to be converted
 
-Make sure to check out build_pdf.sh as an example of usage
+Make sure to check out [build_pdf.sh](https://github.com/kellpossible/Source2PDF/blob/master/build_pdf.sh) as an example of usage
