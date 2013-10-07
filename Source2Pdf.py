@@ -292,9 +292,7 @@ class Searcher(object):
 	def handle_file_search(self, root, f):
 		pass
         	
-	
 #extensions = extension_s.split(";")
-
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Convert code to PDF files')
