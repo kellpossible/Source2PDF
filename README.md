@@ -11,6 +11,8 @@ using regular expressions.
 
 Here is an example of the output you can expect: [Source2PDF.pdf](https://github.com/kellpossible/Source2PDF/blob/master/Source2Pdf.pdf?raw=true)
 
+For information about the license, check [Source2PDF.py](https://github.com/kellpossible/Source2PDF/blob/master/Source2Pdf.py)
+
 Installation
 --------------
 
@@ -26,8 +28,6 @@ python2-setuptools or python-setuptools (depending on which one is for python2)
 package using your system's package manager.
 
 I have not tested this on windows yet, but it should work, so long as you can install these libraries.
-
-For information about the license, check [Source2PDF.py](https://github.com/kellpossible/Source2PDF/blob/master/Source2Pdf.py)
 
 Usage
 --------------
