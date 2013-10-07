@@ -19,7 +19,7 @@ using easy_install:
 
         pisa, reportlab, html5lib and pygments
 
-For information about the license, check Source2PDF.py
+For information about the license, check [Source2PDF.py](https://github.com/kellpossible/Source2PDF/blob/master/Source2Pdf.py)
 
 Usage
 --------------
