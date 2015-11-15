@@ -61,7 +61,10 @@ class ProjectDocument(object):
 	
 	def get_project_stats(self):
 		self.cloc = 0
-		self.name = os.path.basename(self.path)
+		if self.args.project_name:
+			self.name = self.args.project_name
+		else:
+			self.name = os.path.basename(self.path)
 	
 	def to_html(self):
 		"""Convert document to html"""
