@@ -19,7 +19,7 @@ Installation
 Uses python 2.7x
 
 Required packages python libaries which can be installed
-using pip. I have pip aliased to *pip2* on my system.
+using pip. I have pip for python 2.7x aliased to *pip2* on my system.
 
         $ pip2 install -r requirements.txt
 
