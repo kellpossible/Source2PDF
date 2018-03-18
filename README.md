@@ -17,17 +17,13 @@ Installation
 --------------
 
 Uses python 2.7x
+
 Required packages python libaries which can be installed
-using [easy_install](https://pypi.python.org/pypi/setuptools) (as part of the 
-setuptools collection):
+using pip. I have pip aliased to *pip2* on my system.
 
-        pisa, reportlab, html5lib and pygments
+        $ pip2 install -r requirements.txt
 
-I've found the easiest way to get "easy\_install" on linux is by installing 
-python2-setuptools or python-setuptools (depending on which one is for python2)
-package using your system's package manager.
-
-I have not tested this on windows yet, but it should work, so long as you can install these libraries.
+I have not tested this software on windows yet, but it should work provided you can get the dependencies installed.
 
 Usage
 --------------
